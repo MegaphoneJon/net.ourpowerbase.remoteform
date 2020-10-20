@@ -377,8 +377,8 @@ function remoteForm(config) {
   }
 
   // Sanity checking
-  if (cfg.entity != 'Profile' && cfg.entity != 'ContributionPage') {
-    friendlyErr("Only Profile and ContributionPage entities is currently supported.");
+  if (cfg.entity != 'Profile' && cfg.entity != 'ContributionPage' && cfg.entity != 'FormProcessor') {
+    friendlyErr("Only Profile, Contribution Pages, and Form Processor entities are currently supported.");
     return false;
   }
 
@@ -433,6 +433,7 @@ function remoteForm(config) {
     var submitEntity = cfg.entity;
 
     if (cfg.entity == 'Profile') {
+      action = 'getfields';
       params = {
         profile_id: cfg.id,
         api_action: 'submit',
@@ -440,6 +441,7 @@ function remoteForm(config) {
       };
     }
     else if (cfg.entity == 'ContributionPage') {
+      action = 'getfields';
       params = {
         contribution_page_id: cfg.id,
         api_action: 'submit',
@@ -455,8 +457,15 @@ function remoteForm(config) {
         params["test_mode"] = true;
       }
     }
+    if (cfg.entity == 'FormProcessor') {
+      action = 'get';
+      submitEntity = 'FormProcessorInstance'
+      params = {
+        name: cfg.id,
+      };
+    }
     var args = {
-      action: 'getfields',
+      action: action,
       entity: submitEntity,
       params: params 
     };
@@ -560,6 +569,13 @@ function remoteForm(config) {
       if (cfg.paymentTestMode) {
         params["params"]["test_mode"] = true;
       }
+    }
+    if (cfg.entity == 'FormProcessor') {
+      params = {
+        action: cfg.id,
+        entity: cfg.entity,
+        params: {},
+      };
     }
     for (var key in fields) {
       if (key.startsWith('placeholder_')) {
@@ -715,6 +731,9 @@ function remoteForm(config) {
 
   // This function starts everything - returns the built form.
   function buildForm(fields) {
+    if (typeof transformFieldMetadata == 'function') {
+      fields = transformFieldMetadata(fields);
+    }
     for (var key in fields) {
       if (fields.hasOwnProperty(key)) {
         var def = fields[key];
